@@ -1,0 +1,2 @@
+# asid
+algorytmy :))
