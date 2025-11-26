@@ -1,0 +1,542 @@
+\documentclass[a4paper,12pt]{article}
+
+\usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{amsmath}
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinestyle{cppstyle}{
+    language=C++,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{violet},
+    commentstyle=\color{purple!40!white},
+    stringstyle=\color{purple!60!black},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=10pt,
+    backgroundcolor=\color{white},
+    frame=none, 
+    tabsize=4,
+    breaklines=false,
+    showstringspaces=false,
+    columns=fullflexible
+}
+
+\lstset{style=cppstyle}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\LARGE \bfseries Algorytmy i Struktury Danych Sprawozdanie 2\par}
+    \vspace{2cm}
+    {\large Maja Kołakowska\par}
+    \vspace{0.5cm}
+    {\large 287360\par}
+    \vfill
+\end{titlepage}
+
+\tableofcontents
+\newpage
+\setcounter{page}{1}
+
+\section{Wstęp}
+W tej pracy zajmiemy się analizą i porównaniem wybranych algorytmów sortowania. Rozpatrzone zostaną: Quick Sort, Bucket Sort, Radix Sort, Dla każdego z wymienionych algorytmów zostaną zaimplementowane ich zmodyfikowane wersje: 
+\begin{itemize}
+    \item Quick Sort, który dzieli tablice przy pomocy dwóch elementów
+    \item Bucekt Sort, działający na dowolnych danych wejściowych
+    \item Radix Sort, który sortuje również liczby ujemne.
+\end{itemize}
+
+
+\section{Opis metody badawczej}
+Celem pracy jest zbadanie efektywności algorytmu Radix Sort oraz porównanie efektywności Quick Sorta i Bucket Sorta. Testujemy następujące zmienne: czas, liczbę przypisań oraz liczbę porównań. 
+
+Wykorzystujemy podstawową wersję Radix Sorta. Wykonujemy po 5 testów dla różnych podstaw i rozmiarów tablic, a następnie obliczamy średnie wartości naszych wskaźników. Badane podstawy to: 2, 4, 8, 10 i 16, natomiast badane rozmiary tablic to: 1000, 5000, 10000, 25000, 50000, 75000 i 100000.
+
+Przy analizie porównawczej wykorzystujemy obie wersje Quick Sorta oraz zmodyfikowaną wersję Bucket Sorta. Dla każdego z algorytmów wykonujemy 100 testów dla wyżej wymienionych rozmiarów tablic, po czym obliczamy średnie wartości naszych wskaźników.
+
+ 
+\section{Quick Sort}
+
+\subsection{Standardowy Quick Sort}
+Algorytm Quick Sort, to algorytm sortujący opierający się na metodzie "dziel i zwyciężaj". Działa poprzez wybór elementu zwanego pivotem i podzieleniu tablicy na elementy mniejsze oraz elementy większe od pivota. Algorytm następnie rekurencyjnie sortuje obie części sortuje się, aż do uzyskania tablic zawierających jeden element. Jego złożoność to $O(n \log n)$.
+\begin{lstlisting}
+    int Partition(int A[], int poczatek, int koniec) {
+    int x = A[koniec];
+    int i = poczatek - 1;
+
+    for (int j = poczatek; j <= koniec - 1; j++) {
+        comparisons++;
+        if (A[j] <= x) {
+            i++;
+            swap(A[i], A[j]);
+            assignments+=3;
+        }
+    }
+    swap(A[i + 1], A[koniec]);
+    assignments+=3;
+
+    return i + 1;
+}
+
+void quickSort(int A[], int p, int k) {
+    if (p < k) {
+        int s = Partition(A, p, k);
+        quickSort(A, p, s-1);
+        quickSort(A, s + 1, k);
+    }
+}
+
+\end{lstlisting}
+\subsection{Dual Pivot Quick Sort}
+Dual Pivot Quick Sort to odmiana klasycznego Quick Sorta, która używa dwa pivoty zamiast jednego. Algorytm dzieli tablicę na trzy części: elementy mniejsze od pierwszego pivota, elementy mieszczące się między pivotami oraz elementy większe od drugiego pivota. Każdą z tych części algorytm sortuje rekurencyjnie. Jego złożoność to również $O(n \log n)$.
+\begin{lstlisting}
+    void dualPivotPartition(int A[], int left, int right, int &i, int &j) {
+    comparisons++;
+    if (A[left] > A[right]) {
+        swap(A[left], A[right]);
+        assignments+=3;
+    }
+
+    int pivot1 = A[left];
+    int pivot2 = A[right];
+    assignments+=2;
+
+    i = left + 1;
+    int k = left + 1;
+    j = right - 1;
+
+    while (k <= j) {
+        comparisons++;
+        if (A[k] < pivot1) {
+            swap(A[k], A[i]);
+            assignments+=3;
+            i++;
+            k++;
+        } else {
+            if (A[k] > pivot2) {
+                while (k < j) {
+                    comparisons++;
+                    if (A[j] > pivot2) {
+                        j--;
+                    } else {
+                        break;
+                    }
+                }
+                swap(A[k], A[j]);
+                assignments+=3;
+                j--;
+
+                comparisons++;
+                if (A[k] < pivot1) {
+                    swap(A[k], A[i]);
+                    assignments+=3;
+                    i++;
+
+                }
+            }
+                k++;
+            }
+        }
+
+        i--;
+        j++;
+
+        swap(A[left], A[i]);
+    assignments+=3;
+        swap(A[right], A[j]);
+    assignments+=3;
+    }
+
+
+void dualPivotQuickSort(int A[], int left, int right) {
+    comparisons++;
+    if (left < right) {
+        int i, j;
+        dualPivotPartition(A, left, right, i, j);
+
+        dualPivotQuickSort(A, left, i - 1);
+        dualPivotQuickSort(A, i + 1, j - 1);
+        dualPivotQuickSort(A, j + 1, right);
+    }
+}
+\end{lstlisting}
+
+\subsection{Pomiary Standardowej Wersji}
+Dla każdego z siedmiu podanych uprzednio rozmiarów tablic wykonano serię stu sortowań z pomiarem czasu, porównań i przypisań. Wyniki tych pomiarów prezentuje Tabela 1.
+\begin{table}[h!]
+\centering
+\begin{tabular}{|r|r|r|r|}
+\hline
+\textbf{Rozmiar tablicy} & \textbf{Porównania} & \textbf{Przypisania} & \textbf{Czas (ms)} \\ \hline
+1000   & 10850   & 18814   & 0.07 \\ \hline
+5000   & 70875   & 119714  & 0.38 \\ \hline
+10000  & 154460  & 256428  & 0.78 \\ \hline
+25000  & 436920  & 719927  & 2.24 \\ \hline
+50000  & 948473  & 1582107 & 4.93 \\ \hline
+75000  & 1483426 & 2511401 & 7.22 \\ \hline
+100000 & 2037230 & 3512333 & 9.85 \\ \hline
+\end{tabular}
+\caption{Wyniki testów algorytmu Quick Sort}
+\end{table}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{gspp.png}
+    \caption{Porównania i Przypisania Quick Sort}
+    \label{fig:wykres_porownaniprzypisan}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{qsczas.png}
+    \caption{Czas Quick Sort}
+    \label{fig:wykres_czasu}
+\end{figure}
+
+Funkcję czasu aproksymowano funkcją liniową, ponieważ jest ona zbliżona do funkcji liniowo-logarytmicznej dla małych rozmiarów danych. Wyniki w tabeli są zbliżone do funkcji liniowej, dlatego możemy uznać, że dla niewielkich danych złożoność jest lepsza, niż zakładaliśmy. 
+
+Algorytm wykonuje zdecydowanie więcej przypisań niż porównań. Przypisania przypominają funkcję potęgową, natomiast porównania - liniową. Przypisania rosną w ten sposób, ze względu na rekuręcję.
+
+\subsection{Pomiary Zmodyfikowanej Wersji}
+Dla każdego z siedmiu podanych uprzednio rozmiarów tablic wykonano serię stu sortowań z pomiarem czasu, porównań i przypisań. Wyniki tych pomiarów prezentuje Tabela 2.
+\begin{table}[h!]
+\centering
+\begin{tabular}{|r|r|r|r|}
+\hline
+\textbf{Rozmiar tablicy} & \textbf{Porównania} & \textbf{Przypisania} & \textbf{Czas (ms)} \\ \hline
+1000   & 9068     & 13360    & 0,06 \\ \hline
+5000   & 56566    & 80172    & 0,35 \\ \hline
+10000  & 122900   & 172547   & 0,73 \\ \hline
+25000  & 339054   & 471846   & 1,99 \\ \hline
+50000  & 725693   & 988949   & 4,45 \\ \hline
+75000  & 1138581  & 1519117  & 6,39 \\ \hline
+100000 & 1564638  & 2077849  & 8,62 \\ \hline
+\end{tabular}
+\caption{Wyniki testów algorytmu Dual Pivot Quick Sort}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{dpqspp.png}
+    \caption{Porównania i Przypisania Dual Pivot Quick Sort}
+    \label{fig:wykres_porownaniprzypisan}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{dpqsczas.png}
+    \caption{czas Dual Pivot Quick Sort}
+    \label{fig:wykres_czas}
+\end{figure}
+Funkcję czasu aproksymowano funkcją liniową, ponieważ jest ona zbliżona do funkcji liniowo-logarytmicznej dla małych rozmiarów danych. Wyniki w tabeli są zbliżone do funkcji liniowej, dlatego możemy uznać, że dla niewielkich danych złożoność jest lepsza, niż zakładaliśmy. 
+
+Algorytm wykonuje więcej przypisań niż porównań jednak różnica nie jest aż tak widoczna jak w przypadku standardowej implementacj. Obie funkcje zostały aproksymowane funkcją liniową, dla przypisań, zmiana ta wynika z zmniejszonej ilości rekurencji. 
+\section{Bucket Sort}
+
+\subsection{Implementacja Listy i Insertion Sort}
+Insertion Sort na liście jednokierunkowej działa według tej samej idei co wersja tablicowa – elementy są kolejno wstawiane w odpowiednie miejsce w już posortowanej części zbioru. Różnica polega jednak na sposobie reorganizacji danych: zamiast zamieniać wartości w tablicy, algorytm operuje na wskaźnikach, wpinając aktualny węzeł w odpowiednie miejsce listy.
+
+\begin{lstlisting}
+struct Node {
+    double data;
+    Node* next;
+
+    Node(double val) : data(val), next(nullptr) {}
+};
+
+class LinkedList {
+private:
+    Node* head;
+
+public:
+    LinkedList() : head(nullptr) {}
+
+    ~LinkedList() {
+        Node* current = head;
+        while (current) {
+            Node* next = current->next;
+            delete current;
+            current = next;
+        }
+    }
+
+    void insert(double val) {
+        Node* newNode = new Node(val);
+        newNode->next = head;
+        head = newNode;
+    }
+
+    void insertionSort() {
+        if (!head || !head->next) return;
+
+        Node* sorted = nullptr;
+        Node* current = head;
+
+        while (current) {
+            Node* next = current->next;
+
+            if (!sorted || sorted->data >= current->data) {
+                current->next = sorted;
+                sorted = current;
+            } else {
+                Node* temp = sorted;
+                while (temp->next && temp->next->data < current->data) {
+                    temp = temp->next;
+                }
+                current->next = temp->next;
+                temp->next = current;
+            }
+
+            current = next;
+        }
+
+        head = sorted;
+    }
+};
+\end{lstlisting}
+
+\subsection{Standardowy Bucket Sort}
+Bucket sort to algorytm sortowania oparty na rozdzielaniu danych na kilka „kubełków”, z których każdy przechowuje wartości z określonego zakresu, standardowo zakresy są z odcinka [0,1). Po umieszczeniu elementów w odpowiednich kubełkach każdy z nich jest sortowany osobno za pomocą insertion sorta, a następnie kubełki są łączone w jedną posortowaną listę. Złożoność programu zależy od algorytmu wybranego do porządkowania zawartości kubełków. W przypadku insertion sorta jest to $O(n^2)$. W przypadku idealnie rozłożonych danych złożoność to $O(n)$.
+\begin{lstlisting}
+void bucketSort(double A[], int n) {
+    LinkedList* B = new LinkedList[n];
+
+    for (int i = 0; i < n; i++) {
+        int bucket_index = (n * A[i]) - 1;
+        bucket_index = max(0, min(n - 1, bucket_index));
+        B[bucket_index].insert(A[i]);
+    }
+
+    for (int j = 0; j < n; j++) {
+        if (!B[j].empty()) {
+            B[j].insertionSort();
+        }
+    }
+
+    int index = 0;
+    for (int j = 0; j < n; j++) {
+        B[j].copyToArray(A, index);
+    }
+
+    delete[] B;
+}
+\end{lstlisting}
+\subsection{Zmodyfikowany Bucket Sort}
+Zmodyfikowana wersja Bucket Sort, w odróznieniu do standardowej, porządkuje liczby na dowolnym zakresie, nie tylko z przedzialu [0,1). Realizuje to poprzez wyznaczenie minimum i maksimum, a następnie przeskalowanie wartości tak, aby poprawnie przydzielić je do kubełków. Złożonośc algorytmu jest podobna do standardowej wersji; $O(n^2)$, lub w przypadku idealnie rozłożonych danych $O(n)$.
+\begin{lstlisting}
+void bucketSort(int A[], int n, int& comparisons, int& assignments) {
+    if (n <= 0) return;
+
+    int min_val = A[0];
+    int max_val = A[0];
+    for (int i = 1; i < n; i++) {
+        comparisons += 2;
+        if (A[i] < min_val) min_val = A[i];
+        if (A[i] > max_val) max_val = A[i];
+    }
+
+    LinkedList* B = new LinkedList[n];
+
+    for (int i = 0; i < n; i++) {
+        int bucket_index = (int)((long long)(A[i] - min_val) * n / (max_val - min_val + 1));
+        B[bucket_index].insert(A[i]);
+        assignments += 2;
+    }
+
+    if (min_val != max_val) {
+        for (int j = 0; j < n; j++) {
+            if (!B[j].empty()) {
+                B[j].insertionSort(comparisons, assignments);
+            }
+        }
+    }
+
+    int index = 0;
+    for (int j = 0; j < n; j++) {
+        B[j].copyToArray(A, index);
+    }
+
+    delete[] B;
+}
+\end{lstlisting}
+\subsection{Pomiary Zmodyfikowanej Wersji}
+Dla każdego z siedmiu podanych uprzednio rozmiarów tablic wykonano serię stu sortowań z pomiarem czasu, porównań i przypisań. Wyniki tych pomiarów prezentuje Tabela 3.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{|r|r|r|r|}
+\hline
+\textbf{Rozmiar tablicy} & \textbf{Porównania} & \textbf{Przypisania} & \textbf{Czas (ms)} \\ \hline
+1000   & 2461     & 3526     & 0,06 \\ \hline
+5000   & 12346    & 17667    & 0,33 \\ \hline
+10000  & 24973    & 35651    & 0,66 \\ \hline
+25000  & 62041    & 89121    & 1,93 \\ \hline
+50000  & 124349   & 193026   & 3,86 \\ \hline
+75000  & 195548   & 306634   & 5,66 \\ \hline
+100000 & 268782   & 417031   & 7,55 \\ \hline
+\end{tabular}
+\caption{Wyniki testów algorytmu Bucket Sort}
+\end{table}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{bsczas.png}
+    \caption{czas Bucket Sort}
+    \label{fig:wykres_czasu}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{bspp.png}
+    \caption{Przypisania i porównania Bucket Sort}
+    \label{fig:wykres_porownnaniprzypisan}
+\end{figure}
+Funkcję czasu aproksymowano funkcją liniową, ponieważ jest ona zbliżona do funkcji liniowo-logarytmicznej dla małych rozmiarów danyc.  Wyniki w tabeli są zbliżone do funkcji liniowej, dlatego możemy uznać, że dla niewielkich danych złożoność jest lepsza, niż zakładaliśmy. Może to też świadczyć o dobrze rozłożonych danych na kubełki. 
+
+Algorytm wykonuje więcej przypisań niż porównań jednak różnica ta nie jest ogromna. Obie funkcje zostały aproksymowane funkcjami liniowymi. Wynika to z podziału listy na mniejsze podlisty, co upraszca sortowanie.
+\section{Porównanie Quick Sort i Bucket Sort}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{porownanieczas.png}
+    \caption{Porównanie czasu}
+    \label{fig:wykres_porownawczy_czasu}
+\end{figure}
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=1\linewidth]{porownanieprzypisan.png}
+    \caption{Porównanie przypisań}
+    \label{fig:wykres_porównawczy_przypisan}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{porownanieporownan.png}
+    \caption{Porównanie porównań}
+    \label{fig:wykres_porownawczy_porownan}
+\end{figure}
+
+Na Rysunkach 7, 8, 9 zostały przedstawione zbiorcze wykresy naszych algorytmów. Wynika z nich, że najefektywniejszym algorytmem jest Bucket Sort. Nieco gorszy Dual Pivot Quick Sort, a najgorzej wypada klasyczny Quick Sort. Różńice między dwoma Quick Sortami wynikają z lepszego podziału w przypadku zmodyfikowanej wersji.
+Bucket Sort wypada lepiej, ze względu na podział danych do sortowania, ponieważ zna zakres danych i dzieli je równomiernie. Jednak musimy zauważyć, że operujemy na małym zakresie danych, może mieć to znaczenie, ponieważ mimo optymalnego podziału na kubełki Bucket Sort jest oparty na Insertion Sort, który zaczyna działać bardzo wolno dla dużych wartości. Powtarzając eksperymet warto sprawdzić tą tezę. 
+\section{Radix Sort}
+
+\subsection{Standardowy Radix Sort}
+Radix sort to algorytm sortowania pozycyjnego, który porządkuje liczby na podstawie ich poszczególnych cyfr, zaczynając od najmniej znaczącej pozycji. W każdej iteracji przegląda zbiór i grupuje elementy w kolejności rosnącej względem aktualnie analizowanej cyfry, aż do momentu, gdy zostaną uwzględnione wszystkie cyfry najbardziej znaczące w największej wartości. Jego złożoność czasowa wynosi $O(d(n + k))$, gdzie k to liczba różnych cyfr, a d liczba cyfr w kluczach.
+\begin{lstlisting}
+    void counting_sort_by_digit(int A[], int n, int d, int divisor) {
+    int* B = new int[n];
+    int* C = new int[d];
+
+    for (int j = 0; j < d; j++) {
+        C[j] = 0;
+    }
+
+    for (int i = 0; i < n; i++) {
+        int digit = get_digit(A[i], divisor, d);
+        C[digit]++;
+    }
+
+    for (int j = 1; j < d; j++) {
+        C[j] += C[j - 1];
+    }
+
+    for (int i = n - 1; i >= 0; i--) {
+        int digit = get_digit(A[i], divisor, d);
+        B[C[digit] - 1] = A[i];
+        C[digit]--;
+    }
+
+    for (int i = 0; i < n; i++) {
+        assignments++;
+        A[i] = B[i];
+    }
+
+    delete[] B;
+    delete[] C;
+}
+
+void radix_sort(int A[], int n, int d, int k) {
+    for (int i = 0; i < k; i++) {
+        int divisor = 1;
+        for (int j = 0; j < i; j++) {
+            divisor *= d;
+        }
+        counting_sort_by_digit(A, n, d, divisor);
+    }
+}
+
+\end{lstlisting}
+\subsection{Zmodyfikowany Radix Sort}
+Zmodyfikowana wersja Radix Sort działa na tej samej zasadzie. W odróżnieniu od klasycznej wersji, algorytm ten obsługuje również liczby ujemne, przesuwając cały zbiór o wartość minimalną tak, aby wszystkie wartości stały się nieujemne, a po sortowaniu cofając przesunięcie.
+\begin{lstlisting}
+    int shift = 0;
+    if (min_val < 0) {
+        shift = -min_val;
+        for (int i = 0; i < n; i++) {
+            A[i] += shift;
+        }
+    }
+
+    for (int i = 0; i < k; i++) {
+        int divisor = 1;
+        for (int j = 0; j < i; j++) {
+            divisor *= d;
+        }
+        counting_sort_by_digit(A, n, d, divisor);
+    }
+
+    if (shift > 0) {
+        for (int i = 0; i < n; i++) {
+            A[i] -= shift;
+        }
+    }
+}
+\end{lstlisting}
+\subsection{Pomiary Standardowej Wersji}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|r|r|r|r|r|r|r|r|}
+\hline
+\textbf{d $\backslash$ Rozmiar} & 1000 & 5000 & 10000 & 25000 & 50000 & 75000 & 100000 \\ \hline
+2  & 0,0   & 0,6   & 1,6   & 4,2   & 8,0   & 12,2  & 16,4  \\ \hline
+4  & 0,0   & 0,2   & 0,8   & 1,6   & 3,8   & 6,0   & 7,4   \\ \hline
+8  & 0,0   & 0,2   & 0,4   & 1,4   & 2,4   & 3,6   & 5,2   \\ \hline
+10 & 0,0   & 0,2   & 0,4   & 1,0   & 2,6   & 3,6   & 5,0   \\ \hline
+16 & 0,0  & 0,0   & 0,4   & 0,8   & 2,0   & 3,0   & 4,2   \\ \hline
+\end{tabular}
+\caption{Czas dla różnych rozmiarów tablic i podstaw d}
+\end{table}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1\linewidth]{rdsczas.png}
+    \caption{czas Radix Sort}
+    \label{fig:wykres_sczasu}
+\end{figure}
+\begin{table}[H]
+\centering
+\begin{tabular}{|r|r|r|r|r|r|r|r|}
+\hline
+\textbf{d $\backslash$ Rozmiar} & 1000 & 5000 & 10000 & 25000 & 50000 & 75000 & 100000 \\ \hline
+2  & 11000   & 70000   & 150000  & 400000  & 850000   & 1350000 & 1800000 \\ \hline
+4  & 6000    & 35000   & 80000   & 200000  & 450000   & 675000  & 900000  \\ \hline
+8  & 4000    & 25000   & 50000   & 150000  & 300000   & 450000  & 600000  \\ \hline
+10 & 4000    & 25000   & 50000   & 125000  & 300000   & 450000  & 600000  \\ \hline
+16 & 3000    & 20000   & 40000   & 100000  & 250000   & 375000  & 500000  \\ \hline
+\end{tabular}
+\caption{Przypisania dla różnych rozmiarów tablic i podstaw d}
+\end{table}
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=1\linewidth]{rsp.png}
+    \caption{przypisania Radix Sort}
+    \label{fig:wykres_przypisan}
+\end{figure}
+
+Funkcje czasu, dla różnych podstaw d, aproksymowano funkcjami liniowymi. Funkcje różnią się współczynikami, co jest zgodnez teoretycznym założeniem, Widzimy, że im mniejsza podstawa, tym szybciej rośnie funkcja. Wynika to z faktu, że dla mniejszych podtsaw d, algorytm musi wykonać więcej iteracji sortowania po cyfrach, co zwiększa całkowity czas wykonania. 
+
+Podobnie funkcje przypisań, dla różńych podstaw d, sproksymowano funkcjami liniowymi, które również różnią się wspólczynnikami. Zochowana jest również ta sama zależność, im mniejsza podstawa, tym szybciej rośnie funkcja, która również wynika z większej ilości iteracji sortowania po cyfrach. Pomijamy liczenie porównań, ponieważ algorytm nie porównuje elementów między sobą, a jedynie przetwarza ich cyfry w kolejnych iteracjach.
+\end{document}
